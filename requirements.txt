@@ -1,0 +1,6 @@
+tensorflow
+flask
+requests
+numpy
+beautifulsoup4
+matplotlib
