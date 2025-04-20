@@ -14,27 +14,37 @@ class FederatedServer:
     def __init__(self, model_path='./server/global_model'):
         self.model_path = model_path
         self.global_model = create_model()
-
-        import numpy as np
-        sample_input = np.zeros((1,250))
-        self.global_model(sample_input)
-
+        
+        # Remove these lines:
+        # import numpy as np
+        # sample_input = np.zeros((1, 250))
+        # self.global_model(sample_input)
+        
         self.client_updates = {}
         self.clients_ready = set()
         self.round_number = 0
         self.metrics_history = []
         self.is_training = False
-        self.save_global_model()
+        # self.save_global_model()  # Also remove this line for now
         
     def save_global_model(self):
         """Save the global model to disk"""
         os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-        self.global_model.save_weights(self.model_path+'.weights.h5')
+        
+        # Get model weights
+        weights = self.global_model.get_weights()
+        
+        # Save as NumPy arrays
+        np.save(self.model_path + '.weights.npy', weights, allow_pickle=True)
         
     def load_global_model(self):
         """Load the global model from disk if it exists"""
-        if os.path.exists(self.model_path + '.weights.h5'):
-            self.global_model.load_weights(self.model_path + '.weights.h5')
+        if os.path.exists(self.model_path + '.weights.npy'):
+            try:
+                weights = np.load(self.model_path + '.weights.npy', allow_pickle=True)
+                self.global_model.set_weights(weights)
+            except Exception as e:
+                print(f"Error loading model weights: {e}")
             
     def aggregate_models(self):
         """Federated averaging of client model updates"""
@@ -89,14 +99,11 @@ server = FederatedServer()
 @app.route('/get_model', methods=['GET'])
 def get_model():
     """Endpoint for clients to download the latest global model"""
-    if not os.path.exists(server.model_path + '.weights.h5'):
-        return jsonify({'error': 'No model available yet'}), 404
-    
     # Get model weights as list of numpy arrays
     model_weights = server.global_model.get_weights()
     
     # Convert numpy arrays to lists for JSON serialization
-    weights_as_lists = [w.tolist() for w in model_weights]
+    weights_as_lists = [w.tolist() if isinstance(w, np.ndarray) else w for w in model_weights]
     
     return jsonify({
         'round': server.round_number,
