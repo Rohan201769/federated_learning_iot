@@ -42,12 +42,12 @@ class FederatedServer:
             return
         
         # Get all weights
-        weights = [update["weights"] for update in self.client_updates.values()]
+        weights_list = [update["weights"] for update in self.client_updates.values()]
         metrics = [update["metrics"] for update in self.client_updates.values()]
         
         # Simple averaging of weights
         average_weights = []
-        for weights_list_tuple in zip(*weights):
+        for weights_list_tuple in zip(*weights_list):
             average_weights.append(
                 np.array([np.array(w) for w in weights_list_tuple]).mean(axis=0)
             )
@@ -73,6 +73,7 @@ class FederatedServer:
         self.client_updates = {}
         self.clients_ready = set()
         self.round_number += 1
+        print(f"Completed federated round {self.round_number}")
         
     def start_training_round(self):
         """Start a new federated training round"""

@@ -78,7 +78,16 @@ class FederatedClient:
     def submit_model_update(self):
         """Send local model updates to the server"""
         weights = self.local_model.get_weights()
-        weights_as_lists = [w.tolist() for w in weights]
+        
+        # Convert weights to lists for JSON serialization
+        # This is the key part that needs fixing - ensure proper conversion
+        weights_as_lists = []
+        for w in weights:
+            if hasattr(w, 'tolist'):
+                weights_as_lists.append(w.tolist())
+            else:
+                # For non-numpy types, just use the value directly
+                weights_as_lists.append(w)
         
         metrics = self.train_local_model()
         
@@ -91,9 +100,13 @@ class FederatedClient:
         try:
             response = requests.post(
                 f"{self.server_url}/submit_update",
-                json=payload
+                json=payload  # Make sure to use json parameter, not data
             )
-            return response.json()
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Error submitting update: {response.text}")
+                return None
         except Exception as e:
             print(f"Error submitting update: {e}")
             return None

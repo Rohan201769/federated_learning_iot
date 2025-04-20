@@ -16,13 +16,15 @@ dashboard.config['CLIENT_URL'] = 'http://localhost:5001'
 def index():
     """Main dashboard page"""
     return render_template('dashboard.html')
-
 @dashboard.route('/api/server_status')
 def server_status():
     """Get status from the federated server"""
     try:
         response = requests.get(f"{dashboard.config['SERVER_URL']}/get_status")
-        return response.json()
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return jsonify({'error': response.text}), response.status_code
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -31,9 +33,13 @@ def get_metrics():
     """Get training metrics"""
     try:
         response = requests.get(f"{dashboard.config['SERVER_URL']}/get_metrics")
-        return response.json()
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return jsonify({'error': response.text}), response.status_code
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
 
 @dashboard.route('/api/start_round', methods=['POST'])
 def start_round():
@@ -436,6 +442,7 @@ def run_dashboard(host='0.0.0.0', port=8080):
     
     # Run Flask app
     dashboard.run(host=host, port=port, debug=False)
+
 
 if __name__ == '__main__':
     run_dashboard()
