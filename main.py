@@ -12,6 +12,8 @@ from dashboard.app import run_dashboard
 
 def setup_sample_data(data_dir, num_samples=50):
     """Create sample text data for initial testing"""
+    client_dir = os.path.dirname(data_dir)
+    os.makedirs(client_dir, exist_ok=True)
     os.makedirs(data_dir, exist_ok=True)
     
     # Define class names for sentiment analysis

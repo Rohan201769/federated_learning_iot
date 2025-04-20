@@ -60,8 +60,9 @@ class TextDataProcessor:
         sequence = self.tokenizer.texts_to_sequences([text])
         padded = pad_sequences(sequence, maxlen=self.max_sequence_length)
         
-        return padded[0]
-    
+        # Return with the proper shape (batch_size, sequence_length)
+        return padded  # Now returns array with shape (1, max_sequence_length)
+        
     def load_data(self):
         """Load all available data"""
         texts = []
@@ -83,12 +84,16 @@ class TextDataProcessor:
                             labels.append(class_id)
         
         # Convert to sequences
-        sequences = []
-        for text in texts:
-            sequences.append(self.preprocess_text(text))
+        if not texts:
+            return np.array([]), np.array([])
         
-        return np.array(sequences), np.array(labels)
-    
+        # Tokenize all texts
+        sequences = self.tokenizer.texts_to_sequences(texts)
+        # Pad sequences
+        padded_sequences = pad_sequences(sequences, maxlen=self.max_sequence_length)
+        
+        return padded_sequences, np.array(labels)
+        
     def get_training_data(self, validation_split=0.2):
         """Get training data with validation split"""
         X, y = self.load_data()

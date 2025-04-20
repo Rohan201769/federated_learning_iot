@@ -134,7 +134,7 @@ class FederatedClient:
     def classify_text(self, text):
         """Use the current model to classify text"""
         processed_text = self.data_processor.preprocess_text(text)
-        prediction = self.local_model.predict([processed_text])[0]
+        prediction = self.local_model.predict(processed_text)[0]
         predicted_class = np.argmax(prediction)
         
         class_names = self.data_processor.get_class_names()
