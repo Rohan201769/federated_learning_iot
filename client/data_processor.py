@@ -94,39 +94,80 @@ class TextDataProcessor:
         
         return padded_sequences, np.array(labels)
         
+    # client/data_processor.py
+# Update the get_training_data and get_validation_data methods
+
     def get_training_data(self, validation_split=0.2):
         """Get training data with validation split"""
-        X, y = self.load_data()
+        texts = []
+        labels = []
+        
+        # Look for labeled data files (format: class_id_*.txt)
+        for filename in os.listdir(self.data_dir):
+            if filename.endswith('.txt') and filename[0].isdigit():
+                class_id = int(filename[0])
+                
+                with open(os.path.join(self.data_dir, filename), 'r', encoding='utf-8') as file:
+                    content = file.read()
+                    
+                    # Split into separate examples
+                    examples = content.split('\n\n')
+                    for example in examples:
+                        if example.strip():
+                            texts.append(example.strip())
+                            labels.append(class_id)
         
         # If we have no data, return empty arrays
-        if len(X) == 0:
-            return np.array([]), np.array([])
+        if len(texts) == 0:
+            return [], []
         
-        # Use fixed seed for reproducibility
+        # Split data
         np.random.seed(42)
-        indices = np.random.permutation(len(X))
-        split_idx = int(len(X) * (1 - validation_split))
+        indices = np.random.permutation(len(texts))
+        split_idx = int(len(texts) * (1 - validation_split))
         
         train_indices = indices[:split_idx]
         
-        return X[train_indices], y[train_indices]
-    
+        train_texts = [texts[i] for i in train_indices]
+        train_labels = [labels[i] for i in train_indices]
+        
+        return train_texts, train_labels
+
     def get_validation_data(self, validation_split=0.2):
         """Get validation data"""
-        X, y = self.load_data()
+        texts = []
+        labels = []
+        
+        # Look for labeled data files
+        for filename in os.listdir(self.data_dir):
+            if filename.endswith('.txt') and filename[0].isdigit():
+                class_id = int(filename[0])
+                
+                with open(os.path.join(self.data_dir, filename), 'r', encoding='utf-8') as file:
+                    content = file.read()
+                    
+                    # Split into separate examples
+                    examples = content.split('\n\n')
+                    for example in examples:
+                        if example.strip():
+                            texts.append(example.strip())
+                            labels.append(class_id)
         
         # If we have no data, return empty arrays
-        if len(X) == 0:
-            return np.array([]), np.array([])
+        if len(texts) == 0:
+            return [], []
         
-        # Use fixed seed for reproducibility (same as in get_training_data)
+        # Split data
         np.random.seed(42)
-        indices = np.random.permutation(len(X))
-        split_idx = int(len(X) * (1 - validation_split))
+        indices = np.random.permutation(len(texts))
+        split_idx = int(len(texts) * (1 - validation_split))
         
         val_indices = indices[split_idx:]
         
-        return X[val_indices], y[val_indices]
+        val_texts = [texts[i] for i in val_indices]
+        val_labels = [labels[i] for i in val_indices]
+        
+        return val_texts, val_labels
     
     def get_class_names(self):
         """Return list of class names"""

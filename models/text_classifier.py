@@ -3,8 +3,14 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Embedding, GlobalAveragePooling1D
 from tensorflow.keras.optimizers import Adam
+from models.simple_classifier import SimpleTextClassifier
+
 
 def create_model(vocab_size=10000, embedding_dim=16, max_sequence_length=250, num_classes=5):
+
+    """Create a simple text classification model"""
+    return SimpleTextClassifier(num_classes=num_classes)
+
     """Create a simple text classification model suitable for Raspberry Pi"""
     model = Sequential([
         # Use efficient embedding dimension
@@ -29,6 +35,8 @@ def create_model(vocab_size=10000, embedding_dim=16, max_sequence_length=250, nu
 
 # Alternative lightweight model if the above is too resource-intensive
 def create_tiny_model(vocab_size=5000, embedding_dim=8, max_sequence_length=100, num_classes=5):
+    """Create a tiny model for resource-constrained environments"""
+    return SimpleTextClassifier(num_classes=num_classes)
     """Create an extremely lightweight model for very constrained devices"""
     model = Sequential([
         Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_sequence_length),
