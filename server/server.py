@@ -14,6 +14,11 @@ class FederatedServer:
     def __init__(self, model_path='./server/global_model'):
         self.model_path = model_path
         self.global_model = create_model()
+
+        import numpy as np
+        sample_input = np.zeros((1,250))
+        self.global_model(sample_input)
+
         self.client_updates = {}
         self.clients_ready = set()
         self.round_number = 0
@@ -24,12 +29,12 @@ class FederatedServer:
     def save_global_model(self):
         """Save the global model to disk"""
         os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-        self.global_model.save_weights(self.model_path)
+        self.global_model.save_weights(self.model_path+'.weights.h5')
         
     def load_global_model(self):
         """Load the global model from disk if it exists"""
-        if os.path.exists(self.model_path + '.index'):
-            self.global_model.load_weights(self.model_path)
+        if os.path.exists(self.model_path + '.weights.h5'):
+            self.global_model.load_weights(self.model_path + '.weights.h5')
             
     def aggregate_models(self):
         """Federated averaging of client model updates"""
@@ -84,7 +89,7 @@ server = FederatedServer()
 @app.route('/get_model', methods=['GET'])
 def get_model():
     """Endpoint for clients to download the latest global model"""
-    if not os.path.exists(server.model_path + '.index'):
+    if not os.path.exists(server.model_path + '.weights.h5'):
         return jsonify({'error': 'No model available yet'}), 404
     
     # Get model weights as list of numpy arrays
