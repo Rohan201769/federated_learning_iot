@@ -126,7 +126,11 @@ def main():
     os.makedirs(args.data_dir, exist_ok=True)
     
     # Setup sample data if requested
+    # In main.py, ensure these directories exist
     if args.setup_data:
+        print("Setting up sample data directories...")
+        os.makedirs(os.path.join(args.data_dir, 'client1'), exist_ok=True)
+        os.makedirs(os.path.join(args.data_dir, 'client2'), exist_ok=True)
         setup_sample_data(os.path.join(args.data_dir, 'client1'))
         setup_sample_data(os.path.join(args.data_dir, 'client2'))
     

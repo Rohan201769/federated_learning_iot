@@ -77,19 +77,29 @@ class FederatedClient:
     
     def submit_model_update(self):
         """Send local model updates to the server"""
-        weights = self.local_model.get_weights()
+        print(f"Client {self.client_id} preparing model update...")
         
-        # Convert weights to lists for JSON serialization
-        # This is the key part that needs fixing - ensure proper conversion
+        weights = self.local_model.get_weights()
+        print(f"Got weights, length: {len(weights)}")
+        
+        # Convert weights to lists for JSON serialization with explicit type checking
         weights_as_lists = []
-        for w in weights:
-            if hasattr(w, 'tolist'):
-                weights_as_lists.append(w.tolist())
-            else:
-                # For non-numpy types, just use the value directly
-                weights_as_lists.append(w)
+        for i, w in enumerate(weights):
+            try:
+                if isinstance(w, np.ndarray):
+                    weights_as_lists.append(w.tolist())
+                else:
+                    weights_as_lists.append(w)
+                print(f"Processed weight {i}, type: {type(w)}")
+            except Exception as e:
+                print(f"Error converting weight {i}: {e}")
+                # If we can't convert, use an empty array as placeholder
+                weights_as_lists.append([])
+        
+        print(f"Weights converted to lists")
         
         metrics = self.train_local_model()
+        print(f"Got metrics: {metrics}")
         
         payload = {
             'client_id': self.client_id,
@@ -97,18 +107,24 @@ class FederatedClient:
             'metrics': metrics
         }
         
+        print(f"Sending payload to server...")
         try:
+            print(f"Submitting to URL: {self.server_url}/submit_update")
             response = requests.post(
                 f"{self.server_url}/submit_update",
-                json=payload  # Make sure to use json parameter, not data
+                json=payload
             )
+            print(f"Response status code: {response.status_code}")
+            print(f"Response content: {response.text[:100]}...")  # Print first 100 chars of response
+            
             if response.status_code == 200:
                 return response.json()
             else:
                 print(f"Error submitting update: {response.text}")
                 return None
         except Exception as e:
-            print(f"Error submitting update: {e}")
+            print(f"Exception in submit_update: {e}")
+            print(f"Exception type: {type(e)}")
             return None
     
     def run_training_cycle(self):
