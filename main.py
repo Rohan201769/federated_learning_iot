@@ -140,9 +140,15 @@ def main():
     server_url = f"http://{args.server_host}:{args.server_port}"
     
     # Start components based on mode
+   # In main.py, change the run_server thread to run directly
     if args.mode in ['server', 'all']:
         print(f"Starting server on port {args.server_port}...")
-        threads.append(run_in_thread(run_server, args=(args.server_host, args.server_port)))
+        if args.mode == 'all':
+            # Run in thread for 'all' mode
+            threads.append(run_in_thread(run_server, args=(args.server_host, args.server_port)))
+        else:
+            # Run directly for 'server' mode to see output
+            run_server(args.server_host, args.server_port)
     
     # Wait a moment for server to start if we're starting clients too
     if args.mode in ['client', 'all']:

@@ -4,3 +4,4 @@ requests
 numpy
 beautifulsoup4
 matplotlib
+flask-cors

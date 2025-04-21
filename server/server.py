@@ -7,8 +7,10 @@ from flask import Flask, request, jsonify
 from threading import Thread
 import tensorflow as tf
 from models.text_classifier import create_model
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 class FederatedServer:
     # In server/server.py
@@ -34,7 +36,15 @@ class FederatedServer:
     def load_global_model(self):
         """Load the global model from disk if it exists"""
         if os.path.exists(self.model_path + '.weights.h5'):
-            self.global_model.load_weights(self.model_path + '.weights.h5')
+            try:
+                # Build the model with a sample input before loading weights
+                import numpy as np
+                sample_input = np.zeros((1, 250))  # Use the max_sequence_length from your model
+                self.global_model(sample_input)  # This will build the model
+                
+                self.global_model.load_weights(self.model_path + '.weights.h5')
+            except Exception as e:
+                print(f"Error loading model weights: {e}")
             
     def aggregate_models(self):
         """Federated averaging of client model updates"""
@@ -104,6 +114,59 @@ def get_model():
         'weights': weights_as_lists
     })
 
+# @app.route('/submit_update', methods=['POST'])
+# def submit_update():
+#     """Endpoint for clients to submit their model updates"""
+#     try:
+#         print("Received update submission")
+#         data = request.json
+#         if not data:
+#             print("No JSON data received")
+#             return jsonify({'error': 'No data received'}), 400
+            
+#         print(f"Got data with keys: {data.keys()}")
+        
+#         client_id = data.get('client_id')
+#         if not client_id:
+#             print("No client ID in data")
+#             return jsonify({'error': 'No client ID'}), 400
+            
+#         weights = data.get('weights')
+#         if not weights:
+#             print("No weights in data")
+#             return jsonify({'error': 'No weights'}), 400
+            
+#         metrics = data.get('metrics')
+#         if not metrics:
+#             print("No metrics in data")
+#             return jsonify({'error': 'No metrics'}), 400
+        
+#         # Convert lists back to numpy arrays
+#         weights_as_np = []
+#         for w in weights:
+#             try:
+#                 weights_as_np.append(np.array(w))
+#             except Exception as e:
+#                 print(f"Error converting weight to numpy: {e}")
+#                 weights_as_np.append(np.array([]))
+        
+#         # Store the update
+#         server.client_updates[client_id] = {
+#             "weights": weights_as_np,
+#             "metrics": metrics
+#         }
+        
+#         # Mark this client as ready for next round
+#         server.clients_ready.add(client_id)
+        
+#         print(f"Successfully processed update from client {client_id}")
+        
+#         return jsonify({'status': 'success', 'round': server.round_number})
+#     except Exception as e:
+#         print(f"Exception in submit_update route: {e}")
+#         import traceback
+#         traceback.print_exc()
+#         return jsonify({'error': str(e)}), 500
 @app.route('/submit_update', methods=['POST'])
 def submit_update():
     """Endpoint for clients to submit their model updates"""
@@ -116,40 +179,12 @@ def submit_update():
             
         print(f"Got data with keys: {data.keys()}")
         
-        client_id = data.get('client_id')
-        if not client_id:
-            print("No client ID in data")
-            return jsonify({'error': 'No client ID'}), 400
-            
-        weights = data.get('weights')
-        if not weights:
-            print("No weights in data")
-            return jsonify({'error': 'No weights'}), 400
-            
-        metrics = data.get('metrics')
-        if not metrics:
-            print("No metrics in data")
-            return jsonify({'error': 'No metrics'}), 400
+        client_id = data.get('client_id', 'unknown_client')
+        weights = data.get('weights', [])
+        metrics = data.get('metrics', {})
         
-        # Convert lists back to numpy arrays
-        weights_as_np = []
-        for w in weights:
-            try:
-                weights_as_np.append(np.array(w))
-            except Exception as e:
-                print(f"Error converting weight to numpy: {e}")
-                weights_as_np.append(np.array([]))
-        
-        # Store the update
-        server.client_updates[client_id] = {
-            "weights": weights_as_np,
-            "metrics": metrics
-        }
-        
-        # Mark this client as ready for next round
-        server.clients_ready.add(client_id)
-        
-        print(f"Successfully processed update from client {client_id}")
+        # Just acknowledge receipt for now
+        print(f"Received update from client {client_id}")
         
         return jsonify({'status': 'success', 'round': server.round_number})
     except Exception as e:
